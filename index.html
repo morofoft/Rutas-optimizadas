@@ -2,246 +2,44 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Ruta Delivery Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery PRO</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<style>
-#map{height:55vh;border-radius:12px}
-body{touch-action:manipulation}
-</style>
+<link rel="stylesheet" href="app.css">
 </head>
 
-<body class="bg-slate-900 text-white">
+<body class="bg-slate-900 text-white p-2">
 
-<div class="p-3">
-<h1 class="text-lg font-bold text-center mb-2">🚚 Delivery</h1>
+<h1 class="text-center font-bold mb-2">🚚 Delivery PRO</h1>
 
-<textarea id="bulk" placeholder="Juan|18.50,-69.90" 
-class="w-full h-20 text-black p-2 rounded text-sm"></textarea>
+<!-- INPUT -->
+<textarea id="bulk" placeholder="Juan|18.50,-69.90
+Pedro|18.52,-69.88"
+class="w-full h-20 text-black p-2 rounded mb-2 text-sm"></textarea>
 
-<div class="flex gap-2 mt-2">
-<button onclick="cargarBulk()" class="flex-1 bg-purple-500 p-2 rounded text-sm">📥</button>
-<button onclick="optimizarRuta()" class="flex-1 bg-green-500 p-2 rounded text-sm">⚡</button>
-<button onclick="iniciarNavegacion()" class="flex-1 bg-yellow-500 p-2 rounded text-sm">🧭</button>
-</div>
-</div>
-<button onclick="toggleFollow()" 
-class="fixed bottom-20 right-4 bg-blue-500 w-12 h-12 rounded-full shadow-lg">
-📍
+<button onclick="cargarBulk()" 
+class="w-full bg-purple-500 p-2 rounded mb-2 text-sm">
+📥 Cargar ubicaciones
 </button>
 
-<button onclick="activarBrujula()" 
-class="w-full bg-indigo-500 p-2 rounded text-sm mb-2">
-🧭 Activar brújula
-</button>
+<!-- BOTONES -->
+<div class="flex gap-2 mb-2">
+<button onclick="toggleFollow()" class="flex-1 bg-blue-500 p-2 rounded">📍</button>
+<button onclick="toggleCompass()" class="flex-1 bg-indigo-500 p-2 rounded">🧭</button>
+<button onclick="optimizarRuta()" class="flex-1 bg-green-500 p-2 rounded">⚡</button>
+<button onclick="iniciarNavegacion()" class="flex-1 bg-yellow-500 p-2 rounded">🚚</button>
+</div>
+
 <div id="map"></div>
+<div id="info" class="mt-2 text-sm"></div>
+<script src="app.js"></script>
 
-<div id="info" class="p-3 text-sm"></div>
-
-<script>
-let map = L.map('map').setView([18.48, -69.9], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-let puntos = JSON.parse(localStorage.getItem("puntos")) || [];
-let userPos, userMarker, rutaLayer;
-let ordenRuta = [];
-let destinoIndex = 0;
-let markers = [];
-let followUser = true;
-let heading = 0;
-let compassActive = false;
-
-navigator.geolocation.watchPosition(pos => {
-    userPos = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-    };
-
-    if(userMarker){
-        userMarker.setLatLng([userPos.lat, userPos.lng]);
-    } else {
-        userMarker = L.marker([userPos.lat, userPos.lng])
-            .addTo(map)
-            .bindPopup("🚶 Tú");
-    }
-
-    // 🔥 CENTRAR AUTOMÁTICAMENTE
-    if (followUser) {
-        map.setView([userPos.lat, userPos.lng], 16);
-    }
-
-}, null, { enableHighAccuracy: true });
-
-function guardar(){localStorage.setItem("puntos", JSON.stringify(puntos));}
-
-function cargarBulk(){
-    let lines = document.getElementById("bulk").value.split("\n");
-    lines.forEach(l=>{
-        let [n,c]=l.split("|");
-        if(!c)return;
-        let [lat,lng]=c.split(",");
-        puntos.push({nombre:n,lat:+lat,lng:+lng,visitado:false});
-    });
-    guardar();
-    render();
-    Swal.fire("OK","Cargado","success");
-}
-
-function render(){
-    markers.forEach(m=>map.removeLayer(m));
-    markers=[];
-
-    puntos.forEach((p,i)=>{
-        let color=p.visitado?"green":"red";
-
-        let icon=L.divIcon({
-            html:`<div style="background:${color};width:16px;height:16px;border-radius:50%;border:2px solid white"></div>`
-        });
-
-        let m=L.marker([p.lat,p.lng],{icon})
-        .addTo(map)
-        .bindPopup(`<b>${p.nombre}</b><br>
-        <button onclick="marcarVisitado(${i})">✔️ Entregado</button>`);
-
-        markers.push(m);
-    });
-}
-
-function marcarVisitado(i){
-    puntos[i].visitado=true;
-    guardar();
-    render();
-}
-
-function distancia(a,b){
-    const R=6371;
-    const dLat=(b.lat-a.lat)*Math.PI/180;
-    const dLon=(b.lng-a.lng)*Math.PI/180;
-    const x=Math.sin(dLat/2)**2+
-    Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
-    Math.sin(dLon/2)**2;
-    return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
-}
-
-function optimizarOrden(){
-    let sin=[...puntos];
-    let orden=[];
-    let actual=userPos;
-
-    while(sin.length){
-        let best=0, bestD=Infinity;
-        sin.forEach((p,i)=>{
-            let d=distancia(actual,p);
-            if(d<bestD){bestD=d;best=i;}
-        });
-        let s=sin.splice(best,1)[0];
-        orden.push(s);
-        actual=s;
-    }
-    return orden;
-}
-
-async function optimizarRuta(){
-    ordenRuta = optimizarOrden();
-
-    let coords=[userPos,...ordenRuta].map(p=>`${p.lng},${p.lat}`).join(";");
-
-    let res=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-    let data=await res.json();
-
-    if(rutaLayer) map.removeLayer(rutaLayer);
-    rutaLayer=L.geoJSON(data.routes[0].geometry).addTo(map);
-    map.fitBounds(rutaLayer.getBounds());
-}
-
-function iniciarNavegacion(){
-    destinoIndex=0;
-    seguirRuta();
-}
-
-function seguirRuta(){
-    if(destinoIndex>=ordenRuta.length) return;
-
-    let destino=ordenRuta[destinoIndex];
-    let dist=distancia(userPos,destino);
-
-    document.getElementById("info").innerHTML=`
-    🚚 ${destino.nombre}<br>
-    📏 ${dist.toFixed(2)} km`;
-
-    if(dist<0.05){
-        puntos[destinoIndex].visitado=true;
-        guardar();
-        render();
-        destinoIndex++;
-    }
-
-    setTimeout(seguirRuta,2000);
-}
-function toggleFollow(){
-    followUser = !followUser;
-
-    Swal.fire({
-        title: followUser ? "Seguimiento activado" : "Seguimiento desactivado",
-        icon: "info",
-        timer: 1000,
-        showConfirmButton: false
-    });
-}
-
-map.on('dragstart', () => {
-    followUser = false;
-});
-
-function activarBrujula(){
-
-// iPhone necesita permiso
-if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission()
-    .then(response => {
-        if (response === 'granted') {
-            iniciarBrujula();
-        } else {
-            Swal.fire("Permiso denegado");
-        }
-    });
-} else {
-    iniciarBrujula();
-}
-}
-
-function iniciarBrujula(){
-    compassActive = true;
-
-    window.addEventListener("deviceorientation", (event) => {
-
-        let dir = event.alpha;
-
-        if (dir !== null) {
-            heading = 360 - dir; // ajustar
-
-            rotarMapa(heading);
-        }
-
-    });
-
-    Swal.fire("Brújula activada", "", "success");
-}
-
-function rotarMapa(grados){
-
-let mapContainer = document.getElementById("map");
-
-mapContainer.style.transform = `rotate(${grados}deg)`;
-mapContainer.style.transformOrigin = "center center";
-}
-render();
-</script>
 
 </body>
 </html>
