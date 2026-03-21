@@ -50,6 +50,39 @@
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.4) !important;
         }
         .swal2-title, .swal2-html-container { color: white !important; }
+
+    /* Reset total para evitar scroll elástico en móviles */
+    html, body { 
+        height: 100%; 
+        margin: 0; 
+        padding: 0; 
+        overflow: hidden; 
+        position: fixed; /* Evita tirones al deslizar */
+        width: 100%;
+    }
+
+    /* Contenedor principal con scroll suave */
+    #main-content { 
+        height: calc(100vh - 60px); /* Resta la altura del header */
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch; 
+    }
+
+    /* El Mapa necesita una altura mínima obligatoria */
+    #map { 
+        height: 60vh; /* Se ajusta al 60% de la pantalla */
+        min-height: 350px; 
+        width: 100%;
+    }
+
+    /* Mejora de legibilidad en inputs móviles */
+    input, textarea { font-size: 16px !important; } 
+
+    /* Barra de navegación HUD ajustable */
+    #navigation-hud {
+        flex-wrap: wrap; /* Para que los botones bajen si no caben */
+        gap: 8px;
+    }
     </style>
 </head>
 
@@ -93,32 +126,29 @@
             </button>
         </section>
 
-        <section class="relative bg-tech-pane rounded-lg border border-tech-neon/20 shadow-neon-sm overflow-hidden">
+        <section class="relative bg-tech-pane rounded-lg border border-tech-neon/20 shadow-neon-sm mx-1">
+    
             <div class="absolute top-2 right-2 z-[1000] flex flex-col gap-2">
-                <button onclick="toggleFollow()" title="Fijar/Soltar GPS"
-                    class="bg-gray-900/80 backdrop-blur-sm text-blue-400 border border-blue-500/50 p-3 rounded-lg hover:bg-blue-950 transition-all shadow-md">
+                <button onclick="toggleFollow()" class="bg-gray-900/90 backdrop-blur-md text-blue-400 border border-blue-500/50 p-4 rounded-full shadow-lg active:scale-90">
                     📍
                 </button>
-                <button onclick="toggleCompass()" title="Activar/Desactivar Brújula"
-                    class="bg-gray-900/80 backdrop-blur-sm text-indigo-400 border border-indigo-500/50 p-3 rounded-lg hover:bg-indigo-950 transition-all shadow-md">
+                <button onclick="toggleCompass()" class="bg-gray-900/90 backdrop-blur-md text-indigo-400 border border-indigo-500/50 p-4 rounded-full shadow-lg active:scale-90">
                     🧭
                 </button>
             </div>
-
-            <div id="map" class="z-10 border-b border-tech-neon/20"></div>
-
-            <div id="navigation-hud" class="p-3 bg-gray-900/50 min-h-[60px] flex items-center justify-between border-t border-gray-800">
-                <div id="info" class="text-sm font-mono text-tech-green animate-pulse">
-                    > Esperando inicio de secuencia...
+        
+            <div id="map" class="z-10"></div>
+        
+            <div id="navigation-hud" class="p-4 bg-gray-900 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-800">
+                <div id="info" class="text-xs font-mono text-tech-green animate-pulse text-center sm:text-left leading-relaxed">
+                    > SISTEMA_READY_
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="optimizarRuta()" title="Calcular Ruta Óptima"
-                        class="bg-tech-green/10 text-tech-green border border-tech-green/50 px-4 py-2 rounded font-bold text-xs hover:bg-tech-green hover:text-black transition-all uppercase">
-                        ⚡ Calcular
+                <div class="flex w-full sm:w-auto gap-2">
+                    <button onclick="optimizarRuta()" class="flex-1 sm:flex-none bg-tech-green/10 text-tech-green border border-tech-green/50 py-3 px-4 rounded font-bold text-[10px] uppercase tracking-tighter">
+                        ⚡ RUTA
                     </button>
-                    <button onclick="iniciarNavegacion()" title="Iniciar Navegación"
-                        class="bg-yellow-500/10 text-yellow-400 border border-yellow-500/50 px-4 py-2 rounded font-bold text-xs hover:bg-yellow-500 hover:text-black transition-all uppercase">
-                        🚚 Iniciar
+                    <button onclick="iniciarNavegacion()" class="flex-1 sm:flex-none bg-yellow-500/10 text-yellow-400 border border-yellow-500/50 py-3 px-4 rounded font-bold text-[10px] uppercase tracking-tighter">
+                        🚚 GO
                     </button>
                 </div>
             </div>

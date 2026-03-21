@@ -1,1 +1,33 @@
-#map { height: 55vh; }
+
+    /* Reset total para evitar scroll elástico en móviles */
+    html, body { 
+        height: 100%; 
+        margin: 0; 
+        padding: 0; 
+        overflow: hidden; 
+        position: fixed; /* Evita tirones al deslizar */
+        width: 100%;
+    }
+
+    /* Contenedor principal con scroll suave */
+    #main-content { 
+        height: calc(100vh - 60px); /* Resta la altura del header */
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch; 
+    }
+
+    /* El Mapa necesita una altura mínima obligatoria */
+    #map { 
+        height: 60vh; /* Se ajusta al 60% de la pantalla */
+        min-height: 350px; 
+        width: 100%;
+    }
+
+    /* Mejora de legibilidad en inputs móviles */
+    input, textarea { font-size: 16px !important; } 
+
+    /* Barra de navegación HUD ajustable */
+    #navigation-hud {
+        flex-wrap: wrap; /* Para que los botones bajen si no caben */
+        gap: 8px;
+    }

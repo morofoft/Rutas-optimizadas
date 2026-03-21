@@ -1,5 +1,15 @@
 let map = L.map('map', {rotate:true}).setView([18.48, -69.9], 13);
 
+// En app.js, después de crear el objeto 'map'
+setTimeout(() => {
+    map.invalidateSize();
+}, 400);
+
+// También añade esto para que se ajuste al rotar el móvil
+window.addEventListener('resize', () => {
+    map.invalidateSize();
+});
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let puntos = JSON.parse(localStorage.getItem("puntos")) || [];
