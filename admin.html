@@ -66,13 +66,13 @@
             </div>
 
             <nav class="flex gap-2">
-                <a href="#" class="px-3 py-1.5 text-xs rounded border border-tech-neon bg-tech-neon/10 text-tech-neon shadow-neon-sm font-medium tracking-wider uppercase">
+                <a href="./index.html" class="px-3 py-1.5 text-xs rounded border border-gray-700 hover:border-tech-neon/50 hover:text-white transition-all duration-300 text-gray-400 font-medium tracking-wider uppercase">
                     Mapa
                 </a>
                 <a href="#" class="px-3 py-1.5 text-xs rounded border border-gray-700 hover:border-tech-neon/50 hover:text-white transition-all duration-300 text-gray-400 font-medium tracking-wider uppercase">
                     Historial
                 </a>
-                <a href="./admin.html" class="px-3 py-1.5 text-xs rounded border border-gray-700 hover:border-tech-neon/50 hover:text-white transition-all duration-300 text-gray-400 font-medium tracking-wider uppercase">
+                <a href="#" class="px-3 py-1.5 text-xs rounded border border-tech-neon bg-tech-neon/10 text-tech-neon shadow-neon-sm font-medium tracking-wider uppercase">
                     Admin
                 </a>
             </nav>
@@ -81,49 +81,9 @@
 
     <main id="main-content" class="p-3 md:p-5 space-y-4">
 
-        <section class="bg-tech-pane p-4 rounded-lg border border-gray-800 shadow-lg">
-            <h2 class="text-sm font-semibold text-gray-400 mb-3 tracking-wider uppercase">Panel de Carga Masiva</h2>
-            
-            <textarea id="bulk" placeholder="Formato: Nombre|Lat,Lng (Ej: Juan|18.50,-69.90)"
-                class="w-full h-24 bg-gray-900 text-tech-neon p-3 rounded border border-gray-700 focus:border-tech-neon focus:ring-1 focus:ring-tech-neon transition-all outline-none mb-3 text-sm font-mono placeholder:text-gray-600"></textarea>
+        
 
-            <button onclick="cargarBulk()" 
-                class="w-full flex items-center justify-center gap-2 bg-transparent border-2 border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white p-2.5 rounded-lg text-sm font-bold transition-all duration-300 active:scale-95 shadow-lg shadow-purple-500/20">
-                <span class="text-base">📥</span> INYECTAR DATOS (.sys)
-            </button>
-        </section>
-
-        <section class="relative bg-tech-pane rounded-lg border border-tech-neon/20 shadow-neon-sm overflow-hidden">
-            <div class="absolute top-2 right-2 z-[1000] flex flex-col gap-2">
-                <button onclick="toggleFollow()" title="Fijar/Soltar GPS"
-                    class="bg-gray-900/80 backdrop-blur-sm text-blue-400 border border-blue-500/50 p-3 rounded-lg hover:bg-blue-950 transition-all shadow-md">
-                    📍
-                </button>
-                <button onclick="toggleCompass()" title="Activar/Desactivar Brújula"
-                    class="bg-gray-900/80 backdrop-blur-sm text-indigo-400 border border-indigo-500/50 p-3 rounded-lg hover:bg-indigo-950 transition-all shadow-md">
-                    🧭
-                </button>
-            </div>
-
-            <div id="map" class="z-10 border-b border-tech-neon/20"></div>
-
-            <div id="navigation-hud" class="p-3 bg-gray-900/50 min-h-[60px] flex items-center justify-between border-t border-gray-800">
-                <div id="info" class="text-sm font-mono text-tech-green animate-pulse">
-                    > Esperando inicio de secuencia...
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="optimizarRuta()" title="Calcular Ruta Óptima"
-                        class="bg-tech-green/10 text-tech-green border border-tech-green/50 px-4 py-2 rounded font-bold text-xs hover:bg-tech-green hover:text-black transition-all uppercase">
-                        ⚡ Calcular
-                    </button>
-                    <button onclick="iniciarNavegacion()" title="Iniciar Navegación"
-                        class="bg-yellow-500/10 text-yellow-400 border border-yellow-500/50 px-4 py-2 rounded font-bold text-xs hover:bg-yellow-500 hover:text-black transition-all uppercase">
-                        🚚 Iniciar
-                    </button>
-                </div>
-            </div>
-        </section>
-
+        
     </main>
 
     <script src="app.js"></script>
