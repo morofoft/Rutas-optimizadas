@@ -109,40 +109,73 @@ function distancia(a,b){
 }
 
 // ORDEN
-function optimizarOrden(){
-    let sin=[...puntos];
-    let orden=[];
-    let actual=userPos;
+function optimizarOrden() {
+    // FILTRO: Solo tomamos puntos NO visitados
+    let sin = puntos.filter(p => !p.visitado);
+    
+    let orden = [];
+    let actual = userPos;
+
+    // Validación por si no quedan puntos pendientes
+    if (sin.length === 0) {
+        return [];
+    }
 
     while(sin.length){
-        let best=0, bestD=Infinity;
+        let best = 0, bestD = Infinity;
 
-        sin.forEach((p,i)=>{
-            let d=distancia(actual,p);
-            if(d<bestD){bestD=d;best=i;}
+        sin.forEach((p, i) => {
+            let d = distancia(actual, p);
+            if(d < bestD){ bestD = d; best = i; }
         });
 
-        let s=sin.splice(best,1)[0];
+        let s = sin.splice(best, 1)[0];
         orden.push(s);
-        actual=s;
+        actual = s;
     }
 
     return orden;
 }
 
 // RUTA
-async function optimizarRuta(){
+async function optimizarRuta() {
+    // Si no hay posición de usuario todavía, abortamos
+    if (!userPos) {
+        Swal.fire("GPS", "Esperando señal de GPS...", "warning");
+        return;
+    }
+
     ordenRuta = optimizarOrden();
 
-    let coords=[userPos,...ordenRuta].map(p=>`${p.lng},${p.lat}`).join(";");
+    // Si no hay puntos pendientes, limpiamos la ruta anterior y avisamos
+    if (ordenRuta.length === 0) {
+        if (rutaLayer) map.removeLayer(rutaLayer);
+        Swal.fire("Completado", "No hay puntos pendientes por visitar", "info");
+        return;
+    }
 
-    let res=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-    let data=await res.json();
+    let coords = [userPos, ...ordenRuta].map(p => `${p.lng},${p.lat}`).join(";");
 
-    if(rutaLayer) map.removeLayer(rutaLayer);
+    try {
+        let res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+        let data = await res.json();
 
-    rutaLayer=L.geoJSON(data.routes[0].geometry).addTo(map);
-    map.fitBounds(rutaLayer.getBounds());
+        if (data.code !== 'Ok') {
+            Swal.fire("Error", "No se pudo calcular la ruta", "error");
+            return;
+        }
+
+        if (rutaLayer) map.removeLayer(rutaLayer);
+
+        rutaLayer = L.geoJSON(data.routes[0].geometry, {
+            style: { color: '#00f2fe', weight: 5, opacity: 0.7 } // Estilo tech para la línea
+        }).addTo(map);
+        
+        map.fitBounds(rutaLayer.getBounds());
+    } catch (error) {
+        console.error(error);
+        Swal.fire("Error", "Error de conexión con el servidor de rutas", "error");
+    }
 }
 
 // NAVEGACION

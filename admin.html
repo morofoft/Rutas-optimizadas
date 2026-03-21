@@ -2,91 +2,151 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>RM - Sistema de Navegación</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM_NAV - Panel de Control</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="app.css">
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // Configuración de tema Tech personalizado para Tailwind
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         tech: {
-                            bg: '#0a0f1e', // Fondo ultra oscuro azulado
-                            pane: '#111827', // Paneles ligeramente más claros
-                            neon: '#00f2fe', // Cyan neón
-                            purple: '#8e44ad',
-                            green: '#39ff14', // Verde neón
-                            red: '#ff073a'   // Rojo neón
+                            bg: '#0a0f1e',
+                            pane: '#111827',
+                            neon: '#00f2fe',
+                            green: '#39ff14',
+                            red: '#ff073a'
                         }
-                    },
-                    boxShadow: {
-                        'neon-sm': '0 0 5px rgba(0, 242, 254, 0.5)',
-                        'neon-md': '0 0 10px rgba(0, 242, 254, 0.7)',
                     }
                 }
             }
         }
     </script>
+
     <style>
-        /* Pequeño hack para asegurar que el mapa ocupe el espacio */
-        body { display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
-        #main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        
-        /* Estilo Tech para SweetAlert2 */
-        .swal2-popup {
-            background: #111827 !important;
-            color: white !important;
-            border: 1px solid #00f2fe !important;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4) !important;
-        }
-        .swal2-title, .swal2-html-container { color: white !important; }
+        body { background-color: #0a0f1e; color: #d1d5db; min-height: 100vh; }
+        .neon-border { border: 1px solid rgba(0, 242, 254, 0.3); box-shadow: 0 0 10px rgba(0, 242, 254, 0.1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #00f2fe; border-radius: 10px; }
     </style>
 </head>
 
-<body class="bg-tech-bg text-gray-200 font-sans">
+<body class="font-sans">
 
-    <header class="bg-tech-pane border-b border-tech-neon/30 shadow-neon-sm p-3">
-        <div class="flex items-center justify-between max-w-7xl mx-auto">
-            
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-tech-neon rounded-full animate-pulse shadow-neon-md"></div>
-                <h1 class="text-xl font-bold tracking-widest text-white">
-                    <span class="text-tech-neon">RM</span>_NAV<span class="text-xs text-tech-neon/70">.v1</span>
+    <header class="bg-tech-pane border-b border-tech-neon/30 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 bg-tech-red animate-pulse rounded-full shadow-[0_0_8px_#ff073a]"></div>
+                <h1 class="text-xl font-bold tracking-tighter text-white">
+                    ADMIN<span class="text-tech-neon">_CONSOLE</span>
                 </h1>
             </div>
-
-            <nav class="flex gap-2">
-                <a href="./index.html" class="px-3 py-1.5 text-xs rounded border border-gray-700 hover:border-tech-neon/50 hover:text-white transition-all duration-300 text-gray-400 font-medium tracking-wider uppercase">
-                    Mapa
-                </a>
-                <a href="#" class="px-3 py-1.5 text-xs rounded border border-gray-700 hover:border-tech-neon/50 hover:text-white transition-all duration-300 text-gray-400 font-medium tracking-wider uppercase">
-                    Historial
-                </a>
-                <a href="#" class="px-3 py-1.5 text-xs rounded border border-tech-neon bg-tech-neon/10 text-tech-neon shadow-neon-sm font-medium tracking-wider uppercase">
-                    Admin
+            <nav class="flex gap-4">
+                <a href="index.html" class="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-tech-neon transition-colors">
+                    < Volver al Mapa
                 </a>
             </nav>
         </div>
     </header>
 
-    <main id="main-content" class="p-3 md:p-5 space-y-4">
-
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
         
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-tech-pane neon-border p-4 rounded-lg">
+                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Total Puntos</p>
+                <p id="stat-total" class="text-3xl font-mono text-white">00</p>
+            </div>
+            <div class="bg-tech-pane border border-tech-green/30 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Completados</p>
+                <p id="stat-visitados" class="text-3xl font-mono text-tech-green">00</p>
+            </div>
+            <div class="bg-tech-pane border border-tech-red/30 p-4 rounded-lg">
+                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pendientes</p>
+                <p id="stat-pendientes" class="text-3xl font-mono text-tech-red">00</p>
+            </div>
+        </div>
 
-        
+        <section class="bg-tech-pane rounded-xl overflow-hidden shadow-2xl border border-gray-800">
+            <div class="p-4 bg-gray-900 flex justify-between items-center border-b border-gray-800">
+                <h2 class="text-sm font-bold uppercase tracking-widest text-tech-neon">Listado de Registros</h2>
+                <button onclick="limpiarTodo()" class="text-[10px] border border-red-500 text-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all">
+                    PURGAR BASE DE DATOS
+                </button>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] text-gray-500 uppercase tracking-widest border-b border-gray-800">
+                            <th class="p-4 font-medium">Estado</th>
+                            <th class="p-4 font-medium">Identificador</th>
+                            <th class="p-4 font-medium font-mono text-center">Coordenadas</th>
+                            <th class="p-4 font-medium text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-table-body" class="divide-y divide-gray-800/50">
+                        </tbody>
+                </table>
+            </div>
+        </section>
     </main>
 
-    <script src="app.js"></script>
+    <script>
+        // Variables globales necesarias para admin.js
+        let puntos = JSON.parse(localStorage.getItem("puntos")) || [];
+        function guardar() { localStorage.setItem("puntos", JSON.stringify(puntos)); }
+        
+        // Función de renderizado específica para esta tabla
+        function render() {
+            const body = document.getElementById("admin-table-body");
+            const statTotal = document.getElementById("stat-total");
+            const statVisitados = document.getElementById("stat-visitados");
+            const statPendientes = document.getElementById("stat-pendientes");
+
+            body.innerHTML = "";
+            
+            let visitadosCount = puntos.filter(p => p.visitado).length;
+            statTotal.innerText = puntos.length.toString().padStart(2, '0');
+            statVisitados.innerText = visitadosCount.toString().padStart(2, '0');
+            statPendientes.innerText = (puntos.length - visitadosCount).toString().padStart(2, '0');
+
+            if (puntos.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-gray-600 font-mono italic text-sm">> NO HAY DATOS ACTIVOS EN EL STORAGE _</td></tr>`;
+                return;
+            }
+
+            puntos.forEach((p, i) => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-tech-neon/5 transition-colors group text-sm";
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <span class="inline-block w-2 h-2 rounded-full ${p.visitado ? 'bg-tech-green shadow-[0_0_5px_#39ff14]' : 'bg-tech-red shadow-[0_0_5px_#ff073a]'}"></span>
+                    </td>
+                    <td class="p-4 font-bold text-gray-200 uppercase tracking-tighter">${p.nombre}</td>
+                    <td class="p-4 font-mono text-gray-500 text-xs text-center">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</td>
+                    <td class="p-4 text-right">
+                        <div class="flex justify-end gap-3">
+                            <button onclick="toggleEstadoPunto(${i})" class="text-gray-400 hover:text-tech-green transition-colors text-lg" title="Cambiar Estado">
+                                ${p.visitado ? '🔄' : '✅'}
+                            </button>
+                            <button onclick="eliminarPunto(${i})" class="text-gray-400 hover:text-tech-red transition-colors text-lg" title="Borrar">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Inicializar al cargar
+        document.addEventListener("DOMContentLoaded", render);
+    </script>
+    
+    <script src="admin.js"></script>
 
 </body>
 </html>
