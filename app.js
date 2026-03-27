@@ -68,7 +68,8 @@ function cargarBulk(){
             nombre:n,
             lat:+lat,
             lng:+lng,
-            visitado:false
+            visitado:false,
+            seleccionado: false
         });
     });
 
@@ -77,32 +78,65 @@ function cargarBulk(){
     Swal.fire("Cargado","","success");
 }
 
-// RENDER
+function toggleSeleccion(i){
+    puntos[i].seleccionado = !puntos[i].seleccionado;
+    guardar();
+    render();
+}
+
 function render(){
-    markers.forEach(m=>map.removeLayer(m));
-    markers=[];
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
 
-    puntos.forEach((p,i)=>{
-        let color = p.visitado ? "green" : "red";
+    puntos.forEach((p, i)=>{
 
-        let icon=L.divIcon({
-            html:`<div style="background:${color};width:16px;height:16px;border-radius:50%;border:2px solid white"></div>`
+        let color = p.visitado 
+            ? "green" 
+            : p.seleccionado 
+                ? "yellow" 
+                : "red";
+
+        let icon = L.divIcon({
+            html:`<div style="
+                background:${color};
+                width:16px;
+                height:16px;
+                border-radius:50%;
+                border:2px solid white"></div>`
         });
 
-        let m=L.marker([p.lat,p.lng],{icon})
+        let marker = L.marker([p.lat,p.lng], {icon})
         .addTo(map)
-        .bindPopup(`<b>${p.nombre}</b><br>
-        <button onclick="marcarVisitado(${i})">✔️</button>`);
+        .bindPopup(`
+            <b>${p.nombre}</b><br>
+            Estado: ${p.visitado ? "✅ Entregado" : "❌ Pendiente"}<br>
+            
+            <button onclick="marcarVisitado(${i})">
+                ${p.visitado ? "Deshacer" : "Marcar entregado"}
+            </button>
+        `)
 
-        markers.push(m);
+        markers.push(marker);
     });
 }
 
 // MARCAR VISITADO
 function marcarVisitado(i){
-    puntos[i].visitado = true;
+    puntos[i].visitado = !puntos[i].visitado;
+
+    // opcional: quitar de seleccionados
+    if(puntos[i].visitado){
+        puntos[i].seleccionado = false;
+    }
+
     guardar();
     render();
+
+    Swal.fire(
+        puntos[i].visitado ? "Entregado ✔️" : "Reactivado 🔄",
+        puntos[i].nombre,
+        "success"
+    );
 }
 
 // DISTANCIA
@@ -146,48 +180,141 @@ function optimizarOrden() {
 
     return orden;
 }
+function optimizarOrdenSeleccionado(lista){
 
-// RUTA
-async function optimizarRuta() {
-    // Si no hay posición de usuario todavía, abortamos
-    if (!userPos) {
-        Swal.fire("GPS", "Esperando señal de GPS...", "warning");
-        return;
+    let sin = [...lista];
+    let orden = [];
+    let actual = userPos;
+
+    while(sin.length){
+        let best = 0;
+        let bestD = Infinity;
+
+        sin.forEach((p,i)=>{
+            let d = distancia(actual,p);
+            if(d < bestD){
+                bestD = d;
+                best = i;
+            }
+        });
+
+        let s = sin.splice(best,1)[0];
+        orden.push(s);
+        actual = s;
     }
 
-    ordenRuta = optimizarOrden();
-
-    // Si no hay puntos pendientes, limpiamos la ruta anterior y avisamos
-    if (ordenRuta.length === 0) {
-        if (rutaLayer) map.removeLayer(rutaLayer);
-        Swal.fire("Completado", "No hay puntos pendientes por visitar", "info");
-        return;
-    }
-
-    let coords = [userPos, ...ordenRuta].map(p => `${p.lng},${p.lat}`).join(";");
-
-    try {
-        let res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-        let data = await res.json();
-
-        if (data.code !== 'Ok') {
-            Swal.fire("Error", "No se pudo calcular la ruta", "error");
-            return;
-        }
-
-        if (rutaLayer) map.removeLayer(rutaLayer);
-
-        rutaLayer = L.geoJSON(data.routes[0].geometry, {
-            style: { color: '#00f2fe', weight: 5, opacity: 0.7 } // Estilo tech para la línea
-        }).addTo(map);
-        
-        map.fitBounds(rutaLayer.getBounds());
-    } catch (error) {
-        console.error(error);
-        Swal.fire("Error", "Error de conexión con el servidor de rutas", "error");
-    }
+    return orden;
 }
 
+function abrirSelector(){
+
+    let html = `
+        <input id="buscador" placeholder="Buscar..."
+        class="swal2-input">
+
+        <div id="listaPuntos" style="text-align:left; max-height:300px; overflow:auto;">
+            ${puntos.map((p,i)=>`
+                <label style="display:flex;gap:8px;margin:5px 0;">
+                    <input type="checkbox" ${p.seleccionado ? "checked" : ""} 
+                    onchange="toggleSeleccion(${i})">
+                    ${p.nombre}
+                </label>
+            `).join("")}
+        </div>
+    `;
+
+    Swal.fire({
+        title: "Seleccionar puntos",
+        html,
+        width: 400,
+        showConfirmButton: false
+    });
+
+    // 🔎 buscador
+    setTimeout(()=>{
+        document.getElementById("buscador").addEventListener("input", function(){
+            let val = this.value.toLowerCase();
+
+            document.querySelectorAll("#listaPuntos label").forEach(el=>{
+                el.style.display = el.innerText.toLowerCase().includes(val) 
+                    ? "flex" 
+                    : "none";
+            });
+        });
+    }, 100);
+}
+
+async function optimizarRutaManual(){
+    let seleccionados = puntos.filter(p => p.seleccionado);
+
+    if(seleccionados.length < 2){
+        Swal.fire("Selecciona al menos 2 puntos");
+        return;
+    }
+
+    ordenRuta = optimizarOrdenSeleccionado(seleccionados);
+
+    let coords = [userPos, ...ordenRuta]
+        .map(p => `${p.lng},${p.lat}`)
+        .join(";");
+
+    let res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`
+    );
+
+    let data = await res.json();
+
+    if(rutaLayer) map.removeLayer(rutaLayer);
+
+    rutaLayer = L.geoJSON(data.routes[0].geometry, {
+        style:{color:"red", weight:5}
+    }).addTo(map);
+
+    map.fitBounds(rutaLayer.getBounds());
+}
+
+async function optimizarRutaAuto(){
+
+    let pendientes = puntos.filter(p => !p.visitado);
+
+    if(pendientes.length < 2){
+        Swal.fire("No hay suficientes puntos");
+        return;
+    }
+
+    ordenRuta = optimizarOrden(pendientes);
+
+    let coords = [userPos, ...ordenRuta]
+        .map(p => `${p.lng},${p.lat}`)
+        .join(";");
+
+    let res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`
+    );
+
+    let data = await res.json();
+
+    if(rutaLayer) map.removeLayer(rutaLayer);
+
+    rutaLayer = L.geoJSON(data.routes[0].geometry, {
+        style:{color:"lime", weight:5}
+    }).addTo(map);
+
+    map.fitBounds(rutaLayer.getBounds());
+}
+// RUTA
+function optimizarRuta(){
+
+    let seleccionados = puntos.filter(p => p.seleccionado);
+
+    if(seleccionados.length >= 2){
+        Swal.fire("Modo Manual 🎯");
+        optimizarRutaManual();
+    } else {
+        Swal.fire("Modo Automático 🧠");
+        optimizarRutaAuto();
+    }
+}
 // NAVEGACION
 function iniciarNavegacion(){
     destinoIndex=0;
